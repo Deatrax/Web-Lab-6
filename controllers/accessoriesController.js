@@ -22,7 +22,7 @@ exports.getAccessory = async (req, res) => {
     }
     // Ensure the accessory belongs to the user
     if (accessory.user.toString() !== req.user.id) {
-        return res.status(403).json({ message: "User not authorized" });
+      return res.status(403).json({ message: "User not authorized" });
     }
     res.status(200).json(accessory);
   } catch (error) {
@@ -33,25 +33,35 @@ exports.getAccessory = async (req, res) => {
 // Add a new accessory
 exports.addAccessory = async (req, res) => {
   try {
-    const { name, color, season, occasion, category, compatibleWith } = req.body;
+    const { name, color, type, compatibleWith } = req.body;
 
-    if (!name || !color || !season || !occasion || !category) {
-        return res.status(400).json({ message: "Please provide all required fields." });
+    if (!name || !color) {
+      return res.status(400).json({ message: "Please provide all required fields (name, color)." });
     }
-    
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "accessories",
-    });
+
+    let imageUrl = '';
+    let cloudinary_id = '';
+
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "accessories",
+      });
+      imageUrl = result.secure_url;
+      cloudinary_id = result.public_id;
+    }
 
     const newAccessory = new Accessories({
-      user: req.user.id,
+      // user: req.user.id, // Removed for testing without auth
       name,
       color,
-      season,
-      occasion,
-      category,
-      imageUrl: result.secure_url,
-      cloudinary_id: result.public_id,
+      type,
+      // season, // Removed as not in model
+      // occasion, // Removed as not in model
+      // category, // Removed as not in model
+      image: {
+        url: imageUrl,
+        public_id: cloudinary_id
+      },
       compatibleWith: compatibleWith || [],
       wearCount: 0,
       lastWorn: null,
@@ -71,9 +81,9 @@ exports.updateAccessory = async (req, res) => {
     if (!accessory) {
       return res.status(404).json({ message: "Accessory not found" });
     }
-    
+
     if (accessory.user.toString() !== req.user.id) {
-        return res.status(403).json({ message: "User not authorized" });
+      return res.status(403).json({ message: "User not authorized" });
     }
 
     let imageUrl = accessory.imageUrl;
@@ -90,9 +100,9 @@ exports.updateAccessory = async (req, res) => {
     }
 
     const updateData = {
-        ...req.body,
-        imageUrl,
-        cloudinary_id
+      ...req.body,
+      imageUrl,
+      cloudinary_id
     };
 
     const updatedAccessory = await Accessories.findByIdAndUpdate(
@@ -113,13 +123,13 @@ exports.deleteAccessory = async (req, res) => {
     if (!accessory) {
       return res.status(404).json({ message: "Accessory not found" });
     }
-    
+
     if (accessory.user.toString() !== req.user.id) {
-        return res.status(403).json({ message: "User not authorized" });
+      return res.status(403).json({ message: "User not authorized" });
     }
 
     await cloudinary.uploader.destroy(accessory.cloudinary_id);
-    
+
     await Accessories.findByIdAndDelete(req.params.id);
 
     res.status(200).json({ message: "Accessory deleted successfully" });
@@ -136,7 +146,7 @@ exports.suggestDonatingAccessory = async (req, res) => {
     }
 
     if (accessory.user.toString() !== req.user.id) {
-        return res.status(403).json({ message: "User not authorized" });
+      return res.status(403).json({ message: "User not authorized" });
     }
 
     const oneYearAgo = new Date();
@@ -145,16 +155,16 @@ exports.suggestDonatingAccessory = async (req, res) => {
     const lastWornDate = accessory.lastWorn ? new Date(accessory.lastWorn) : null;
 
     if (accessory.wearCount <= 2 || (lastWornDate && lastWornDate <= oneYearAgo)) {
-      res.status(200).json({ 
-          message: "This item is suggested for donation due to low usage.",
-          donated: false, 
-          suggestion: true
-        });
+      res.status(200).json({
+        message: "This item is suggested for donation due to low usage.",
+        donated: false,
+        suggestion: true
+      });
     } else {
-      res.status(200).json({ 
-          message: "Accessory does not meet donation criteria.",
-          suggestion: false
-    });
+      res.status(200).json({
+        message: "Accessory does not meet donation criteria.",
+        suggestion: false
+      });
     }
   } catch (error) {
     res.status(500).json({ message: "Error analyzing accessory: " + error.message });
