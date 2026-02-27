@@ -16,8 +16,10 @@ const Analytics = () => {
       const response = await axios.get('/api/outfits/analytics');
       setAnalyticsData(response.data);
       setLoading(false);
+      setError(null);
     } catch (err) {
-      setError('Failed to fetch analytics data. Check if backend is running on port 5000.');
+      const msg = err.response?.data?.error || err.response?.data?.message || 'Failed to fetch analytics data. Check if backend is running on port 3001.';
+      setError(msg);
       setLoading(false);
       console.error(err);
     }
@@ -28,18 +30,15 @@ const Analytics = () => {
   }, [fetchAnalytics]);
 
   if (loading) return <div className="loading">Analyzing your wardrobe...</div>;
-  if (error) return (
-    <div className="error-container">
-      <div className="error">{error}</div>
-      <button onClick={fetchAnalytics} className="cta-button">Retry</button>
-    </div>
-  );
 
   const mostUsedClothes = analyticsData?.mostUsed?.clothes || [];
   const mostUsedAccessories = analyticsData?.mostUsed?.accessories || [];
   
   const donationClothes = analyticsData?.donationSuggestions?.clothes || [];
   const donationAccessories = analyticsData?.donationSuggestions?.accessories || [];
+
+  const breakdownClothes = analyticsData?.breakdown?.clothes || [];
+  const breakdownAccessories = analyticsData?.breakdown?.accessories || [];
 
   const combinedItems = [...mostUsedClothes, ...mostUsedAccessories]
     .sort((a, b) => b.wearCount - a.wearCount)
@@ -59,15 +58,32 @@ const Analytics = () => {
     ],
   };
 
-  const doughnutData = {
-    labels: ['Clothes', 'Accessories'],
-    datasets: [
-      {
-        data: [mostUsedClothes.length, mostUsedAccessories.length],
-        backgroundColor: ['rgba(79, 70, 229, 0.7)', 'rgba(16, 185, 129, 0.7)'],
-        hoverOffset: 4,
-      },
-    ],
+  const clothesBreakdownData = {
+    labels: breakdownClothes.map(c => c._id || 'Uncategorized'),
+    datasets: [{
+      data: breakdownClothes.map(c => c.count),
+      backgroundColor: [
+        'rgba(79, 70, 229, 0.7)',
+        'rgba(16, 185, 129, 0.7)',
+        'rgba(245, 158, 11, 0.7)',
+        'rgba(239, 68, 68, 0.7)',
+        'rgba(107, 114, 128, 0.7)',
+      ]
+    }]
+  };
+
+  const accessoriesBreakdownData = {
+    labels: breakdownAccessories.map(a => a._id || 'Uncategorized'),
+    datasets: [{
+      data: breakdownAccessories.map(a => a.count),
+      backgroundColor: [
+        'rgba(16, 185, 129, 0.7)',
+        'rgba(79, 70, 229, 0.7)',
+        'rgba(245, 158, 11, 0.7)',
+        'rgba(239, 68, 68, 0.7)',
+        'rgba(107, 114, 128, 0.7)',
+      ]
+    }]
   };
 
   return (
@@ -76,11 +92,26 @@ const Analytics = () => {
         <h2>Wardrobe Insights</h2>
         <p>Understand your style habits and optimize your closet.</p>
       </div>
+
+      {error && (
+        <div className="error-banner">
+          <div className="error">{error}</div>
+          <button onClick={fetchAnalytics} className="cta-button small-btn">Retry Analysis</button>
+        </div>
+      )}
       
       <div className="stats-overview">
         <div className="stat-card">
-          <span className="stat-value">{mostUsedClothes.length + mostUsedAccessories.length}</span>
-          <span className="stat-label">Active Items</span>
+          <span className="stat-value">{analyticsData?.totals?.clothes || 0}</span>
+          <span className="stat-label">Clothes</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-value">{analyticsData?.totals?.accessories || 0}</span>
+          <span className="stat-label">Accessories</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-value">{analyticsData?.totals?.outfits || 0}</span>
+          <span className="stat-label">Planned Outfits</span>
         </div>
         <div className="stat-card highlight">
           <span className="stat-value">{donationClothes.length + donationAccessories.length}</span>
@@ -88,9 +119,9 @@ const Analytics = () => {
         </div>
       </div>
 
-      <div className="charts-grid">
-        <div className="analytics-section">
-          <h3>Top Used Items</h3>
+      <div className="analytics-grid">
+        <div className="analytics-section full-width">
+          <h3>Usage Performance (Top 10)</h3>
           <div className="chart-container">
             {combinedItems.length > 0 ? (
               <Bar 
@@ -106,14 +137,26 @@ const Analytics = () => {
         </div>
 
         <div className="analytics-section">
-          <h3>Item Distribution</h3>
+          <h3>Clothes by Category</h3>
           <div className="chart-container doughnut">
-            {mostUsedClothes.length + mostUsedAccessories.length > 0 ? (
+            {breakdownClothes.length > 0 ? (
               <Doughnut 
-                data={doughnutData} 
+                data={clothesBreakdownData} 
                 options={{ responsive: true, maintainAspectRatio: false }} 
               />
-            ) : <p className="empty-msg">No items recorded.</p>}
+            ) : <p className="empty-msg">No clothes recorded.</p>}
+          </div>
+        </div>
+
+        <div className="analytics-section">
+          <h3>Accessories by Type</h3>
+          <div className="chart-container doughnut">
+            {breakdownAccessories.length > 0 ? (
+              <Doughnut 
+                data={accessoriesBreakdownData} 
+                options={{ responsive: true, maintainAspectRatio: false }} 
+              />
+            ) : <p className="empty-msg">No accessories recorded.</p>}
           </div>
         </div>
       </div>
