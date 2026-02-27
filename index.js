@@ -6,8 +6,8 @@ const PORT = process.env.PORT || 3000;
 
 
 
-app.use(express.json()); //allows your application to read and parse JSON data sent in the request body.
-app.use(express.urlencoded({ extended: true })); // Allows parsing of x-www-form-urlencoded data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 
 // Routes
