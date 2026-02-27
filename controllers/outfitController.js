@@ -8,15 +8,18 @@ exports.addOutfit = async (req, res) => {
     try {
         const { name, clothingItems, accessories, weatherCondition } = req.body;
 
-        let outfitImages = {};
+
 
         // Upload images to Cloudinary if files are provided
+        let outfitImages = [];
         if (req.files && req.files.length > 0) {
-            const uploadedImage = await cloudinary.uploader.upload(req.files[0].path);
-            outfitImages = {
-                url: uploadedImage.url,
-                public_id: uploadedImage.public_id
-            };
+            for (let file of req.files) {
+                const uploadedImage = await cloudinary.uploader.upload(file.path);
+                outfitImages.push({
+                    url: uploadedImage.url,
+                    public_id: uploadedImage.public_id
+                });
+            }
         }
 
         const outfit = new Outfit({
