@@ -33,3 +33,36 @@ exports.addClothes = async (req, res) => {
     }
 };
 
+exports.getClothes = async (req, res) => {
+    try {
+        const clothes = await Clothes.find().sort({ createdAt: -1 });
+        res.status(200).json(clothes);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.deleteClothes = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const clothesItem = await Clothes.findById(id);
+
+        if (!clothesItem) {
+            return res.status(404).json({ message: 'Clothing item not found' });
+        }
+
+        // Delete images from Cloudinary
+        if (clothesItem.images && clothesItem.images.length > 0) {
+            for (const image of clothesItem.images) {
+                if (image.public_id) {
+                    await cloudinary.uploader.destroy(image.public_id);
+                }
+            }
+        }
+
+        await Clothes.findByIdAndDelete(id);
+        res.status(200).json({ message: 'Clothing item deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

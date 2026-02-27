@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
 import Analytics from './components/Analytics';
 import Accessories from './components/Accessories';
+import Clothes from './components/Clothes';
 import './App.css';
 
 function App() {
@@ -16,7 +17,7 @@ function App() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/accessories" element={<Accessories />} />
           {/* Add other routes as they are implemented */}
-          <Route path="/wardrobe" element={<div className="placeholder-page">Wardrobe Page Coming Soon</div>} />
+          <Route path="/wardrobe" element={<Clothes />} />
           <Route path="/outfits" element={<div className="placeholder-page">Outfits Page Coming Soon</div>} />
           <Route path="/weather" element={<div className="placeholder-page">Weather Page Coming Soon</div>} />
           <Route path="/laundry" element={<div className="placeholder-page">Laundry Page Coming Soon</div>} />
