@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import '../App.css';
+import './Accessories.css';
 
 const Accessories = () => {
   const [accessories, setAccessories] = useState([]);
@@ -16,6 +16,10 @@ const Accessories = () => {
   });
   const [selectedImage, setSelectedImage] = useState(null);
   const [donationSuggestion, setDonationSuggestion] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('All');
+  const [sortBy, setSortBy] = useState('newest');
+  const [showForm, setShowForm] = useState(false);
 
   const fetchAccessories = useCallback(async () => {
     try {
@@ -76,6 +80,7 @@ const Accessories = () => {
     setSelectedImage(null);
     setIsEditing(null);
     setDonationSuggestion({});
+    setShowForm(false);
   };
 
   const handleEdit = (item) => {
@@ -113,7 +118,7 @@ const Accessories = () => {
   const markAsDonated = async (item) => {
     if (window.confirm(`Mark "${item.name}" as donated? This will hide it from your active collection.`)) {
       try {
-        await axios.put(`/api/accessories/${item._id}`, { ...item, status: 'donated' });
+        await axios.put(`/api/accessories/${item._id}`, { status: 'donated' });
         fetchAccessories();
       } catch (err) {
         console.error('Error marking as donated:', err);
@@ -121,13 +126,40 @@ const Accessories = () => {
     }
   };
 
+  const filteredAccessories = accessories
+    .filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           (item.type && item.type.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesFilter = filterType === 'All' || item.type === filterType;
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'newest') return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      if (sortBy === 'oldest') return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+      if (sortBy === 'wears-desc') return (b.wearCount || 0) - (a.wearCount || 0);
+      if (sortBy === 'wears-asc') return (a.wearCount || 0) - (b.wearCount || 0);
+      return 0;
+    });
+
+  const accessoryTypes = ['All', ...new Set(accessories.map(item => item.type).filter(Boolean))];
+
   if (loading) return <div className="loading">Loading Accessories...</div>;
 
   return (
     <div className="accessories-container">
       <div className="page-header">
-        <h2>My Accessories</h2>
-        <p>Manage your collection of belts, hats, jewelry and more.</p>
+        <div>
+          <h2>My Accessories</h2>
+          <p>Manage your collection of belts, hats, jewelry and more.</p>
+        </div>
+        {!showForm && !isEditing && (
+          <button 
+            className="cta-button" 
+            onClick={() => setShowForm(true)}
+          >
+            + Add New
+          </button>
+        )}
       </div>
 
       {error && (
@@ -137,9 +169,15 @@ const Accessories = () => {
         </div>
       )}
       
-      <div className="add-accessory-form">
-        <h3>{isEditing ? 'Edit Accessory' : 'Add New Accessory'}</h3>
-        <form onSubmit={handleSubmit} className="accessory-form">
+      {(showForm || isEditing) && (
+        <div className="add-accessory-form" id="add-form">
+          <div className="form-header">
+            <h3>{isEditing ? 'Edit Accessory' : 'Add New Accessory'}</h3>
+            <button className="text-btn" onClick={() => { resetForm(); setShowForm(false); }}>
+              {isEditing ? 'Cancel Edit' : 'Close Form'}
+            </button>
+          </div>
+          <form onSubmit={handleSubmit} className="accessory-form">
           <div className="form-grid">
             <div className="form-group">
               <label>Name</label>
@@ -162,6 +200,7 @@ const Accessories = () => {
                 <option value="Watch">Watch</option>
                 <option value="Scarf">Scarf</option>
                 <option value="Bag">Bag</option>
+                <option value="Sunglasses">Sunglasses</option>
                 <option value="Other">Other</option>
               </select>
             </div>
@@ -209,11 +248,49 @@ const Accessories = () => {
           </div>
         </form>
       </div>
+    )}
+
+      <div className="controls-section">
+        <div className="search-bar">
+          <input 
+            type="text" 
+            placeholder="Search by name or type..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="filters-row">
+          <div className="filter-group">
+            <label>Filter by Type:</label>
+            <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+              {accessoryTypes.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>Sort by:</label>
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="wears-desc">Most Worn</option>
+              <option value="wears-asc">Least Worn</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       <div className="accessories-grid">
-        {accessories.length === 0 ? (
-          <p className="empty-state">No accessories found. Start by adding one above!</p>
-        ) : accessories.map((item) => (
+        {filteredAccessories.length === 0 ? (
+          <div className="empty-state-container">
+            <p className="empty-state">No accessories match your criteria.</p>
+            {searchTerm || filterType !== 'All' ? (
+              <button className="text-btn" onClick={() => { setSearchTerm(''); setFilterType('All'); }}>Clear Filters</button>
+            ) : (
+              <p>Start by adding one above!</p>
+            )}
+          </div>
+        ) : filteredAccessories.map((item) => (
           <div key={item._id} className={`accessory-card ${item.status === 'donated' ? 'donated-item' : ''}`}>
             {item.image && item.image.url ? (
               <img src={item.image.url} alt={item.name} className="accessory-image" />
@@ -258,9 +335,7 @@ const Accessories = () => {
           </div>
         ))}
       </div>
-    </div>
+      </div>
   );
 };
-
 export default Accessories;
-
