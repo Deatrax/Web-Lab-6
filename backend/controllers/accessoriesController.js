@@ -1,15 +1,18 @@
 const Accessories = require("../models/accessoriesModel");
-const User = require("../models/userModel");
 const cloudinary = require("../config/cloudinary");
+
+console.log("Accessories Model loaded:", !!Accessories);
 
 // Get all accessories
 exports.getAllAccessories = async (req, res) => {
+  console.log("Fetching all accessories...");
   try {
-    const user = await User.findById(req.user.id);
-    const accessories = await Accessories.find({ user: user.id });
+    const accessories = await Accessories.find();
+    console.log("Accessories found:", accessories.length);
     res.status(200).json(accessories);
   } catch (error) {
-    res.status(500).json({ message: "Error getting accessories: " + error.message });
+    console.error("CRITICAL ERROR in getAllAccessories:", error);
+    res.status(500).json({ message: "Error getting accessories", error: error.message });
   }
 };
 
@@ -19,10 +22,6 @@ exports.getAccessory = async (req, res) => {
     const accessory = await Accessories.findById(req.params.id);
     if (!accessory) {
       return res.status(404).json({ message: "Accessory not found" });
-    }
-    // Ensure the accessory belongs to the user
-    if (accessory.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: "User not authorized" });
     }
     res.status(200).json(accessory);
   } catch (error) {
@@ -50,19 +49,23 @@ exports.addAccessory = async (req, res) => {
       cloudinary_id = result.public_id;
     }
 
+    // Handle compatibleWith if it's a string (from FormData)
+    let compatibleWithArray = [];
+    if (typeof compatibleWith === 'string') {
+        compatibleWithArray = compatibleWith.split(',').map(item => item.trim()).filter(item => item !== '');
+    } else if (Array.isArray(compatibleWith)) {
+        compatibleWithArray = compatibleWith;
+    }
+
     const newAccessory = new Accessories({
-      // user: req.user.id, // Removed for testing without auth
       name,
       color,
       type,
-      // season, // Removed as not in model
-      // occasion, // Removed as not in model
-      // category, // Removed as not in model
       image: {
         url: imageUrl,
         public_id: cloudinary_id
       },
-      compatibleWith: compatibleWith || [],
+      compatibleWith: compatibleWithArray,
       wearCount: 0,
       lastWorn: null,
     });
@@ -82,16 +85,14 @@ exports.updateAccessory = async (req, res) => {
       return res.status(404).json({ message: "Accessory not found" });
     }
 
-    if (accessory.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: "User not authorized" });
-    }
-
-    let imageUrl = accessory.imageUrl;
-    let cloudinary_id = accessory.cloudinary_id;
+    let imageUrl = accessory.image.url;
+    let cloudinary_id = accessory.image.public_id;
 
     // If a new file is uploaded, delete old upload new
     if (req.file) {
-      await cloudinary.uploader.destroy(accessory.cloudinary_id);
+      if (accessory.image.public_id) {
+          await cloudinary.uploader.destroy(accessory.image.public_id);
+      }
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "accessories",
       });
@@ -99,10 +100,24 @@ exports.updateAccessory = async (req, res) => {
       cloudinary_id = result.public_id;
     }
 
+    const { compatibleWith, ...otherBody } = req.body;
+    
+    let compatibleWithArray = accessory.compatibleWith;
+    if (compatibleWith !== undefined) {
+        if (typeof compatibleWith === 'string') {
+            compatibleWithArray = compatibleWith.split(',').map(item => item.trim()).filter(item => item !== '');
+        } else if (Array.isArray(compatibleWith)) {
+            compatibleWithArray = compatibleWith;
+        }
+    }
+
     const updateData = {
-      ...req.body,
-      imageUrl,
-      cloudinary_id
+      ...otherBody,
+      image: {
+          url: imageUrl,
+          public_id: cloudinary_id
+      },
+      compatibleWith: compatibleWithArray
     };
 
     const updatedAccessory = await Accessories.findByIdAndUpdate(
@@ -124,11 +139,9 @@ exports.deleteAccessory = async (req, res) => {
       return res.status(404).json({ message: "Accessory not found" });
     }
 
-    if (accessory.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: "User not authorized" });
+    if (accessory.image.public_id) {
+        await cloudinary.uploader.destroy(accessory.image.public_id);
     }
-
-    await cloudinary.uploader.destroy(accessory.cloudinary_id);
 
     await Accessories.findByIdAndDelete(req.params.id);
 
@@ -143,10 +156,6 @@ exports.suggestDonatingAccessory = async (req, res) => {
     const accessory = await Accessories.findById(req.params.id);
     if (!accessory) {
       return res.status(404).json({ message: "Accessory not found" });
-    }
-
-    if (accessory.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: "User not authorized" });
     }
 
     const oneYearAgo = new Date();

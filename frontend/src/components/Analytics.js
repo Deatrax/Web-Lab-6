@@ -1,106 +1,151 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
-import { Doughnut, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title } from 'chart.js';
+import { Bar, Doughnut } from 'react-chartjs-2';
 import '../App.css';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title);
 
 const Analytics = () => {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        const response = await axios.get('/api/outfits/analytics');
-        setAnalyticsData(response.data);
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to fetch analytics data');
-        setLoading(false);
-        console.error(err);
-      }
-    };
-
-    fetchAnalytics();
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      const response = await axios.get('/api/outfits/analytics');
+      setAnalyticsData(response.data);
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to fetch analytics data. Check if backend is running on port 5000.');
+      setLoading(false);
+      console.error(err);
+    }
   }, []);
 
-  if (loading) return <div className="loading">Loading Analytics...</div>;
-  if (error) return <div className="error">{error}</div>;
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
-  // Prepare data for charts
+  if (loading) return <div className="loading">Analyzing your wardrobe...</div>;
+  if (error) return (
+    <div className="error-container">
+      <div className="error">{error}</div>
+      <button onClick={fetchAnalytics} className="cta-button">Retry</button>
+    </div>
+  );
+
   const mostUsedClothes = analyticsData?.mostUsed?.clothes || [];
   const mostUsedAccessories = analyticsData?.mostUsed?.accessories || [];
   
   const donationClothes = analyticsData?.donationSuggestions?.clothes || [];
   const donationAccessories = analyticsData?.donationSuggestions?.accessories || [];
 
-  const mostUsedLabels = [...mostUsedClothes, ...mostUsedAccessories].map(item => item.name);
-  const mostUsedData = [...mostUsedClothes, ...mostUsedAccessories].map(item => item.wearCount);
+  const combinedItems = [...mostUsedClothes, ...mostUsedAccessories]
+    .sort((a, b) => b.wearCount - a.wearCount)
+    .slice(0, 10);
 
-  const chartData = {
-    labels: mostUsedLabels,
+  const barChartData = {
+    labels: combinedItems.map(item => item.name),
     datasets: [
       {
-        label: '# of Wears',
-        data: mostUsedData,
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.2)',
-          'rgba(54, 162, 235, 0.2)',
-          'rgba(255, 206, 86, 0.2)',
-          'rgba(75, 192, 192, 0.2)',
-          'rgba(153, 102, 255, 0.2)',
-          'rgba(255, 159, 64, 0.2)',
-        ],
-        borderColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(255, 159, 64, 1)',
-        ],
+        label: 'Number of Wears',
+        data: combinedItems.map(item => item.wearCount),
+        backgroundColor: 'rgba(79, 70, 229, 0.6)',
+        borderColor: 'rgba(79, 70, 229, 1)',
         borderWidth: 1,
+        borderRadius: 5,
+      },
+    ],
+  };
+
+  const doughnutData = {
+    labels: ['Clothes', 'Accessories'],
+    datasets: [
+      {
+        data: [mostUsedClothes.length, mostUsedAccessories.length],
+        backgroundColor: ['rgba(79, 70, 229, 0.7)', 'rgba(16, 185, 129, 0.7)'],
+        hoverOffset: 4,
       },
     ],
   };
 
   return (
     <div className="analytics-container">
-      <h2>Wardrobe Analytics</h2>
+      <div className="page-header">
+        <h2>Wardrobe Insights</h2>
+        <p>Understand your style habits and optimize your closet.</p>
+      </div>
       
-      <div className="analytics-section">
-        <h3>Most Used Items</h3>
-        {mostUsedLabels.length > 0 ? (
-          <div className="chart-container">
-            <Bar data={chartData} options={{ responsive: true, plugins: { legend: { position: 'top' } } }} />
-          </div>
-        ) : (
-          <p>No enough data for most used items.</p>
-        )}
+      <div className="stats-overview">
+        <div className="stat-card">
+          <span className="stat-value">{mostUsedClothes.length + mostUsedAccessories.length}</span>
+          <span className="stat-label">Active Items</span>
+        </div>
+        <div className="stat-card highlight">
+          <span className="stat-value">{donationClothes.length + donationAccessories.length}</span>
+          <span className="stat-label">Suggested for Donation</span>
+        </div>
       </div>
 
-      <div className="analytics-section">
+      <div className="charts-grid">
+        <div className="analytics-section">
+          <h3>Top Used Items</h3>
+          <div className="chart-container">
+            {combinedItems.length > 0 ? (
+              <Bar 
+                data={barChartData} 
+                options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } } 
+                }} 
+              />
+            ) : <p className="empty-msg">Not enough data yet.</p>}
+          </div>
+        </div>
+
+        <div className="analytics-section">
+          <h3>Item Distribution</h3>
+          <div className="chart-container doughnut">
+            {mostUsedClothes.length + mostUsedAccessories.length > 0 ? (
+              <Doughnut 
+                data={doughnutData} 
+                options={{ responsive: true, maintainAspectRatio: false }} 
+              />
+            ) : <p className="empty-msg">No items recorded.</p>}
+          </div>
+        </div>
+      </div>
+
+      <div className="donation-section">
         <h3>Donation Suggestions</h3>
+        <p className="subtitle">Items you haven't worn in a while or have very low usage.</p>
+        
         <div className="suggestion-grid">
-          <div className="suggestion-column">
-            <h4>Clothes to Donate</h4>
-            {donationClothes.length === 0 ? <p>No suggestions.</p> : (
-              <ul>
+          <div className="suggestion-card">
+            <h4>Clothes</h4>
+            {donationClothes.length === 0 ? <p className="empty-msg">Your clothes are all well-used!</p> : (
+              <ul className="suggestion-list">
                 {donationClothes.map(item => (
-                  <li key={item._id}>{item.name} (Worn: {item.wearCount})</li>
+                  <li key={item._id}>
+                    <span className="item-name">{item.name}</span>
+                    <span className="item-meta">Worn {item.wearCount} times</span>
+                  </li>
                 ))}
               </ul>
             )}
           </div>
-          <div className="suggestion-column">
-            <h4>Accessories to Donate</h4>
-            {donationAccessories.length === 0 ? <p>No suggestions.</p> : (
-              <ul>
+          
+          <div className="suggestion-card">
+            <h4>Accessories</h4>
+            {donationAccessories.length === 0 ? <p className="empty-msg">All accessories are in active rotation.</p> : (
+              <ul className="suggestion-list">
                 {donationAccessories.map(item => (
-                  <li key={item._id}>{item.name} (Worn: {item.wearCount})</li>
+                  <li key={item._id}>
+                    <span className="item-name">{item.name}</span>
+                    <span className="item-meta">Worn {item.wearCount} times</span>
+                  </li>
                 ))}
               </ul>
             )}
