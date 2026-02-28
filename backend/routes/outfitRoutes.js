@@ -11,9 +11,8 @@ const { getWardrobeAnalytics } = require('../controllers/analyticsController');
 router.post('/', upload.array('outfitImages', 5), addOutfit)
 router.post('/generate', upload.array('outfitImages', 5), generateOutfit);
 router.get('/', getAllOutfits);
+router.get('/analytics', getWardrobeAnalytics);
 router.get('/:id', getOutfitById);
 router.patch('/:id', modifyOutfitById)
-
-router.get('/analytics', getWardrobeAnalytics);
 
 module.exports = router;

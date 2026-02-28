@@ -1,6 +1,15 @@
 const Clothes = require('../models/clothesModel');
 const cloudinary = require('../config/cloudinary');
 
+exports.getAllClothes = async (req, res) => {
+    try {
+        const clothes = await Clothes.find();
+        res.status(200).json(clothes);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 exports.addClothes = async (req, res) => {
     try {
         const { name, category, color, season, occasion } = req.body;

@@ -219,13 +219,20 @@ body {
   padding: 0.8rem;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  width: 100%;
 }
 
-.accessories-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 2rem;
+.secondary-button {
+  background-color: white;
+  color: var(--text-main);
+  padding: 0.8rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  background-color: #f8fafc;
 }
 
 .accessory-card {
@@ -268,18 +275,20 @@ body {
 .accessory-details p {
   color: var(--text-muted);
   margin-bottom: 0.5rem;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem;
   font-size: 0.9rem;
 }
 
-.delete-btn {
-  background-color: var(--danger);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 1rem;
-  width: 100%;
+.text-btn:hover {
+  text-decoration: underline;
 }
 
 .delete-btn:hover {
@@ -317,6 +326,29 @@ body {
   .suggestion-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.error-banner {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error-banner .error {
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  font-size: 1rem;
+}
+
+.small-btn {
+  padding: 0.4rem 1rem !important;
+  font-size: 0.85rem !important;
 }
 
 /* Clothes Page Styles */
