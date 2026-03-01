@@ -8,6 +8,7 @@ const Navbar = () => {
       <Link to="/" className="logo">SmartWardrobe</Link>
       <ul className="nav-links">
         <li><Link to="/">Home</Link></li>
+        <li><Link to="/user">Create User</Link></li>
         <li><Link to="/wardrobe">Wardrobe</Link></li>
         <li><Link to="/accessories">Accessories</Link></li>
         <li><Link to="/outfits">Outfit</Link></li>

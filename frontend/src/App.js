@@ -8,6 +8,7 @@ import Laundry from './components/Laundry';
 import Clothes from './components/Clothes';
 import Outfits from './components/Outfits';
 import Weather from './components/Weather';
+import User from './components/User';
 import './App.css';
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
           <Route path="/wardrobe" element={<Clothes />} />
           <Route path="/outfits" element={<Outfits />} />
           <Route path="/weather" element={<Weather />} />
+          <Route path="/user" element={<User />} />
         </Routes>
       </div>
     </Router>

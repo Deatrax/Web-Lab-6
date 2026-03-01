@@ -1,14 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './Dashboard.css';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [userName, setUserName] = useState('');
+
+  useEffect(() => {
+    const fetchActiveUser = async () => {
+      const activeUserId = localStorage.getItem('activeUserId');
+      if (activeUserId) {
+        try {
+          const res = await axios.get('/api/users');
+          const user = res.data.find(u => u._id === activeUserId);
+          if (user) {
+            setUserName(user.name);
+          }
+        } catch (err) {
+          console.error('Error fetching active user:', err);
+        }
+      }
+    };
+    fetchActiveUser();
+  }, []);
 
   return (
     <div>
       <header className="hero">
-        <h1>Elevate Your Style, Effortlessly</h1>
+        <h1>{userName ? `Welcome back, ${userName}!` : 'Elevate Your Style, Effortlessly'}</h1>
         <p>The intelligent wardrobe manager that helps you organize clothes, plan outfits based on weather, and track your laundry.</p>
       </header>
 

@@ -49,7 +49,6 @@ exports.addAccessory = async (req, res) => {
       cloudinary_id = result.public_id;
     }
 
-    // Handle compatibleWith if it's a string (from FormData)
     let compatibleWithArray = [];
     if (typeof compatibleWith === 'string') {
         compatibleWithArray = compatibleWith.split(',').map(item => item.trim()).filter(item => item !== '');
@@ -88,7 +87,6 @@ exports.updateAccessory = async (req, res) => {
     let imageUrl = accessory.image.url;
     let cloudinary_id = accessory.image.public_id;
 
-    // If a new file is uploaded, delete old upload new
     if (req.file) {
       if (accessory.image.public_id) {
           await cloudinary.uploader.destroy(accessory.image.public_id);

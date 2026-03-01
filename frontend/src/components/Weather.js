@@ -26,6 +26,15 @@ const Weather = () => {
             ]);
             setWeatherList(weatherRes.data);
             setUsers(usersRes.data);
+            
+            const activeUserId = localStorage.getItem('activeUserId');
+            if (activeUserId) {
+                const activeUser = usersRes.data.find(u => u._id === activeUserId);
+                if (activeUser && !formData.location) {
+                    setFormData(prev => ({ ...prev, location: activeUser.location }));
+                }
+            }
+            
             setLoading(false);
         } catch (err) {
             console.error('Error fetching weather data', err);

@@ -24,10 +24,15 @@ const Outfits = () => {
     };
 
     const generateOutfit = async () => {
+        const userId = localStorage.getItem('activeUserId');
+        if (!userId) {
+            alert('Please select or create a user profile first in the Profile Setup section.');
+            return;
+        }
+
         setGenerating(true);
         try {
-            // Simplified: No longer strictly requiring a user profile for the demo
-            await axios.post('/api/outfits/generate', { occasion });
+            await axios.post('/api/outfits/generate', { occasion, userId });
             fetchOutfits();
             alert('✨ StyleSync has curated a new outfit for you!');
         } catch (err) {

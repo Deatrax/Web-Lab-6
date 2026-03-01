@@ -12,7 +12,6 @@ exports.addOutfit = async (req, res) => {
         // Upload images to Cloudinary if files are provided
         let outfitImages = {};
         if (req.files && req.files.length > 0) {
-            // Match schema: outfitImages is a single object, but we take the first file if multiple are uploaded
             const uploadedImage = await cloudinary.uploader.upload(req.files[0].path);
             outfitImages = {
                 url: uploadedImage.secure_url,
@@ -48,7 +47,7 @@ exports.generateOutfit = async (req, res) => {
             if (user) targetLocation = user.location;
         }
 
-        // 2. Get current weather (Try location -> Try latest -> Default to sunny)
+        // Get current weather (Try location -> Try latest -> Default to sunny)
         let latestWeather;
         if (targetLocation) {
             latestWeather = await Weather.findOne({ location: targetLocation }).sort({ date: -1 });
@@ -58,7 +57,6 @@ exports.generateOutfit = async (req, res) => {
             latestWeather = await Weather.findOne().sort({ date: -1 });
         }
         
-        // Final fallback for demo purposes
         if (!latestWeather) {
             latestWeather = { conditions: 'sunny', location: 'System Default' };
         }
@@ -70,11 +68,11 @@ exports.generateOutfit = async (req, res) => {
         else if (cond === 'cold') currentSeason = 'Winter';
         else if (cond === 'rainy') currentSeason = 'Rainy';
 
-        // 3. Find items in laundry to exclude
+        // Find items in laundry to exclude
         const activeLaundry = await Laundry.find({ status: { $ne: 'done' } });
         const laundryItemIds = activeLaundry.reduce((acc, l) => acc.concat(l.items), []);
 
-        // 4. Find available clothes
+        // Find available clothes
         const clothesQuery = {
             status: 'active',
             _id: { $nin: laundryItemIds }
@@ -95,7 +93,7 @@ exports.generateOutfit = async (req, res) => {
         const bottoms = availableClothes.filter(c => c.category && c.category.toLowerCase().includes('bottom'));
 
         if (tops.length === 0 || bottoms.length === 0) {
-            // Fallback: search without season if no items found
+            // Search without season if no items found
             const fallbackClothes = await Clothes.find({ status: 'active', _id: { $nin: laundryItemIds } });
             const fTops = fallbackClothes.filter(c => c.category && c.category.toLowerCase().includes('top'));
             const fBottoms = fallbackClothes.filter(c => c.category && c.category.toLowerCase().includes('bottom'));
@@ -104,7 +102,6 @@ exports.generateOutfit = async (req, res) => {
                 return res.status(400).json({ message: 'Your wardrobe is too empty! Add some tops and bottoms first.' });
             }
             
-            // If we reached here, use the fallback items
             var selectedTop = fTops[Math.floor(Math.random() * fTops.length)];
             var selectedBottom = fBottoms[Math.floor(Math.random() * fBottoms.length)];
         } else {
@@ -114,7 +111,7 @@ exports.generateOutfit = async (req, res) => {
 
         const selectedClothes = [selectedTop._id, selectedBottom._id];
 
-        // 5. Select accessories
+        // Select accessories
         const availableAccessories = await Accessories.find({ status: 'active' });
         let selectedAccessories = [];
 
@@ -126,7 +123,7 @@ exports.generateOutfit = async (req, res) => {
             selectedAccessories.push(compatibleAccs[Math.floor(Math.random() * compatibleAccs.length)]._id);
         }
 
-        // 6. Save outfit
+        // Save outfit
         const outfitName = `${occasion || 'Daily'} Look - ${new Date().toLocaleDateString()}`;
 
         const outfit = new Outfit({
@@ -139,7 +136,7 @@ exports.generateOutfit = async (req, res) => {
 
         await outfit.save();
 
-        // 7. Update wear counts
+        // Update wear counts
         await Clothes.updateMany(
             { _id: { $in: selectedClothes } },
             { $inc: { wearCount: 1 }, $set: { lastWorn: new Date() } }
