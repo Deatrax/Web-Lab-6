@@ -3,7 +3,7 @@ const router = express.Router();
 const upload = require('../middleware/multer');
 const {
     addOutfit, generateOutfit, getAllOutfits, getOutfitById,
-    modifyOutfitById
+    modifyOutfitById, deleteOutfitById
 } = require('../controllers/outfitController');
 const { getWardrobeAnalytics } = require('../controllers/analyticsController');
 
@@ -14,5 +14,6 @@ router.get('/', getAllOutfits);
 router.get('/analytics', getWardrobeAnalytics);
 router.get('/:id', getOutfitById);
 router.patch('/:id', modifyOutfitById)
+router.delete('/:id', deleteOutfitById);
 
 module.exports = router;

@@ -75,3 +75,31 @@ exports.deleteClothes = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.suggestDonatingClothes = async (req, res) => {
+  try {
+    const item = await Clothes.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ message: "Clothing item not found" });
+    }
+
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+    const lastWornDate = item.lastWorn ? new Date(item.lastWorn) : null;
+
+    if (item.wearCount <= 2 || (lastWornDate && lastWornDate <= oneYearAgo)) {
+      res.status(200).json({
+        message: "This item is suggested for donation due to low usage.",
+        suggestion: true
+      });
+    } else {
+      res.status(200).json({
+        message: "Item does not meet donation criteria.",
+        suggestion: false
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Error analyzing item: " + error.message });
+  }
+};

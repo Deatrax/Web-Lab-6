@@ -5,12 +5,14 @@ const {
     getAllClothes,
     addClothes,
     getClothes,
-    deleteClothes
+    deleteClothes,
+    suggestDonatingClothes
 } = require('../controllers/clothesController');
 
 router.get('/', getAllClothes);
 router.post('/', upload.array('images', 5), addClothes);
 router.get('/', getClothes);
 router.delete('/:id', deleteClothes);
+router.get('/:id/suggest-donation', suggestDonatingClothes);
 
 module.exports = router;

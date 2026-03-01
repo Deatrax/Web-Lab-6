@@ -10,6 +10,7 @@ const Clothes = () => {
     const [clothes, setClothes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         category: '',
@@ -19,6 +20,7 @@ const Clothes = () => {
     });
     const [selectedImages, setSelectedImages] = useState([]);
     const [submitting, setSubmitting] = useState(false);
+    const [donationSuggestion, setDonationSuggestion] = useState({});
 
     useEffect(() => {
         fetchClothes();
@@ -64,15 +66,19 @@ const Clothes = () => {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             fetchClothes();
-            setFormData({ name: '', category: '', color: '', season: '', occasion: '' });
-            setSelectedImages([]);
-            e.target.reset();
+            resetForm();
         } catch (err) {
             console.error('Error adding clothing:', err);
             alert('Failed to add clothing item');
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const resetForm = () => {
+        setFormData({ name: '', category: '', color: '', season: '', occasion: '' });
+        setSelectedImages([]);
+        setShowForm(false);
     };
 
     const handleDelete = async (id) => {
@@ -87,94 +93,118 @@ const Clothes = () => {
         }
     };
 
+    const checkDonation = async (id) => {
+        try {
+            const response = await axios.get(`/api/clothes/${id}/suggest-donation`);
+            setDonationSuggestion(prev => ({ ...prev, [id]: response.data }));
+        } catch (err) {
+            console.error('Error checking donation status:', err);
+        }
+    };
+
     if (loading) return <div className="loading">Loading Wardrobe...</div>;
     if (error) return <div className="error">{error}</div>;
 
     return (
         <div className="accessories-container">
-            <h2>👕 My Wardrobe</h2>
+            <div className="page-header">
+                <div>
+                    <h2>👕 My Wardrobe</h2>
+                    <p>Manage and organize your personal clothing collection.</p>
+                </div>
+                {!showForm && (
+                    <button className="cta-button" onClick={() => setShowForm(true)}>
+                        + Add New Item
+                    </button>
+                )}
+            </div>
 
             {/* Add Clothes Form */}
-            <div className="add-accessory-form">
-                <h3>Add New Clothing Item</h3>
-                <form onSubmit={handleSubmit} className="clothes-form">
-                    <input
-                        type="text"
-                        name="name"
-                        placeholder="Item Name (e.g., Blue Denim Jacket)"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        required
-                    />
-
-                    <select
-                        name="category"
-                        value={formData.category}
-                        onChange={handleInputChange}
-                        required
-                        className="clothes-select"
-                    >
-                        <option value="" disabled>Category</option>
-                        {CATEGORIES.map((cat) => (
-                            <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                    </select>
-
-                    <input
-                        type="text"
-                        name="color"
-                        placeholder="Color (e.g., Navy Blue)"
-                        value={formData.color}
-                        onChange={handleInputChange}
-                        required
-                    />
-
-                    <select
-                        name="season"
-                        value={formData.season}
-                        onChange={handleInputChange}
-                        className="clothes-select"
-                    >
-                        <option value="" disabled>Season</option>
-                        {SEASONS.map((s) => (
-                            <option key={s} value={s}>{s}</option>
-                        ))}
-                    </select>
-
-                    <select
-                        name="occasion"
-                        value={formData.occasion}
-                        onChange={handleInputChange}
-                        className="clothes-select"
-                    >
-                        <option value="" disabled>Occasion</option>
-                        {OCCASIONS.map((o) => (
-                            <option key={o} value={o}>{o}</option>
-                        ))}
-                    </select>
-
-                    <div className="file-input-wrapper">
-                        <label className="file-input-label">
-                            📷 Upload Images
-                            <input
-                                type="file"
-                                name="images"
-                                multiple
-                                accept="image/*"
-                                onChange={handleImagesChange}
-                                className="hidden-file-input"
-                            />
-                        </label>
-                        {selectedImages.length > 0 && (
-                            <span className="file-count">{selectedImages.length} file(s) selected</span>
-                        )}
+            {showForm && (
+                <div className="add-accessory-form">
+                    <div className="form-header">
+                        <h3>Add New Clothing Item</h3>
+                        <button className="text-btn" onClick={resetForm}>Close Form</button>
                     </div>
+                    <form onSubmit={handleSubmit} className="clothes-form">
+                        <input
+                            type="text"
+                            name="name"
+                            placeholder="Item Name (e.g., Blue Denim Jacket)"
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            required
+                        />
 
-                    <button type="submit" className="cta-button" disabled={submitting}>
-                        {submitting ? 'Adding...' : 'Add to Wardrobe'}
-                    </button>
-                </form>
-            </div>
+                        <select
+                            name="category"
+                            value={formData.category}
+                            onChange={handleInputChange}
+                            required
+                            className="clothes-select"
+                        >
+                            <option value="" disabled>Category</option>
+                            {CATEGORIES.map((cat) => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+
+                        <input
+                            type="text"
+                            name="color"
+                            placeholder="Color (e.g., Navy Blue)"
+                            value={formData.color}
+                            onChange={handleInputChange}
+                            required
+                        />
+
+                        <select
+                            name="season"
+                            value={formData.season}
+                            onChange={handleInputChange}
+                            className="clothes-select"
+                        >
+                            <option value="" disabled>Season</option>
+                            {SEASONS.map((s) => (
+                                <option key={s} value={s}>{s}</option>
+                            ))}
+                        </select>
+
+                        <select
+                            name="occasion"
+                            value={formData.occasion}
+                            onChange={handleInputChange}
+                            className="clothes-select"
+                        >
+                            <option value="" disabled>Occasion</option>
+                            {OCCASIONS.map((o) => (
+                                <option key={o} value={o}>{o}</option>
+                            ))}
+                        </select>
+
+                        <div className="file-input-wrapper">
+                            <label className="file-input-label">
+                                📷 Upload Images
+                                <input
+                                    type="file"
+                                    name="images"
+                                    multiple
+                                    accept="image/*"
+                                    onChange={handleImagesChange}
+                                    className="hidden-file-input"
+                                />
+                            </label>
+                            {selectedImages.length > 0 && (
+                                <span className="file-count">{selectedImages.length} file(s) selected</span>
+                            )}
+                        </div>
+
+                        <button type="submit" className="cta-button" disabled={submitting}>
+                            {submitting ? 'Adding...' : 'Add to Wardrobe'}
+                        </button>
+                    </form>
+                </div>
+            )}
 
             {/* Clothes Grid */}
             {clothes.length === 0 ? (
@@ -212,9 +242,19 @@ const Clothes = () => {
                                         +{item.images.length - 1} more photo(s)
                                     </p>
                                 )}
-                                <button onClick={() => handleDelete(item._id)} className="delete-btn">
-                                    🗑️ Delete
-                                </button>
+
+                                {donationSuggestion[item._id] && (
+                                    <div className={`donation-alert ${donationSuggestion[item._id].suggestion ? 'suggest-yes' : 'suggest-no'}`}>
+                                        {donationSuggestion[item._id].message}
+                                    </div>
+                                )}
+
+                                <div className="card-actions">
+                                    <button onClick={() => checkDonation(item._id)} className="suggest-btn">Check Usage</button>
+                                    <button onClick={() => handleDelete(item._id)} className="delete-btn">
+                                        🗑️ Delete
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}

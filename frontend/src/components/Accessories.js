@@ -149,7 +149,7 @@ const Accessories = () => {
     <div className="accessories-container">
       <div className="page-header">
         <div>
-          <h2>My Accessories</h2>
+          <h2>👓 My Accessories</h2>
           <p>Manage your collection of belts, hats, jewelry and more.</p>
         </div>
         {!showForm && !isEditing && (
@@ -168,7 +168,7 @@ const Accessories = () => {
           <button onClick={fetchAccessories} className="cta-button small-btn">Retry Fetch</button>
         </div>
       )}
-      
+
       {(showForm || isEditing) && (
         <div className="add-accessory-form" id="add-form">
           <div className="form-header">
@@ -302,7 +302,7 @@ const Accessories = () => {
                 <h4>{item.name}</h4>
                 <span className={`status-badge ${item.status}`}>{item.status}</span>
               </div>
-              
+
               <div className="tag-container">
                 {item.type && <span className="tag">{item.type}</span>}
                 {item.color && <span className="tag color-tag">{item.color}</span>}

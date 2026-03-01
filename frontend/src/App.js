@@ -6,6 +6,8 @@ import Analytics from './components/Analytics';
 import Accessories from './components/Accessories';
 import Laundry from './components/Laundry';
 import Clothes from './components/Clothes';
+import Outfits from './components/Outfits';
+import Weather from './components/Weather';
 import './App.css';
 
 function App() {
@@ -18,10 +20,9 @@ function App() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/accessories" element={<Accessories />} />
           <Route path="/laundry" element={<Laundry />} />
-          {/* Add other routes as they are implemented */}
           <Route path="/wardrobe" element={<Clothes />} />
-          <Route path="/outfits" element={<div className="placeholder-page">Outfits Page Coming Soon</div>} />
-          <Route path="/weather" element={<div className="placeholder-page">Weather Page Coming Soon</div>} />
+          <Route path="/outfits" element={<Outfits />} />
+          <Route path="/weather" element={<Weather />} />
         </Routes>
       </div>
     </Router>

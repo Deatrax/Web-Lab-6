@@ -109,7 +109,7 @@ const Laundry = () => {
     <div className="laundry-container">
       <div className="page-header">
         <div>
-          <h2>Laundry Management</h2>
+          <h2>🧺 Laundry Management</h2>
           <p>Track your clothes through the washing process.</p>
         </div>
         {!showForm && (

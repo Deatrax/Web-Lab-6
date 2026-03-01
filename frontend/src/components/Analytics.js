@@ -42,7 +42,7 @@ const Analytics = () => {
 
   const combinedItems = [...mostUsedClothes, ...mostUsedAccessories]
     .sort((a, b) => b.wearCount - a.wearCount)
-    .slice(0, 10);
+    .slice(0, 5);
 
   const barChartData = {
     labels: combinedItems.map(item => item.name),
@@ -89,8 +89,10 @@ const Analytics = () => {
   return (
     <div className="analytics-container">
       <div className="page-header">
-        <h2>Wardrobe Insights</h2>
-        <p>Understand your style habits and optimize your closet.</p>
+        <div>
+          <h2>📊 Wardrobe Insights</h2>
+          <p>Understand your style habits and optimize your closet.</p>
+        </div>
       </div>
 
       {error && (
@@ -121,7 +123,7 @@ const Analytics = () => {
 
       <div className="analytics-grid">
         <div className="analytics-section full-width">
-          <h3>Usage Performance (Top 10)</h3>
+          <h3>Usage Performance (Top 5)</h3>
           <div className="chart-container">
             {combinedItems.length > 0 ? (
               <Bar 

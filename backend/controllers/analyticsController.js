@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 exports.getWardrobeAnalytics = async (req, res) => {
   console.log("Analytics request received");
   
-  // Lazily load models to avoid circular dependencies or registration issues
   const Clothes = mongoose.models.Clothes || require("../models/clothesModel");
   const Accessories = mongoose.models.Accessories || require("../models/accessoriesModel");
   const Outfit = mongoose.models.Outfit || require("../models/outfitModel");
@@ -23,7 +22,6 @@ exports.getWardrobeAnalytics = async (req, res) => {
       breakdown: { clothes: [], accessories: [] }
     };
 
-    // Helper to safely run queries
     const safeRun = async (fn, context) => {
       try { return await fn(); } 
       catch (e) { console.error(`Error in ${context}:`, e); return null; }
@@ -37,13 +35,25 @@ exports.getWardrobeAnalytics = async (req, res) => {
 
     // MOST USED ITEMS
     console.log("Fetching most used...");
-    result.mostUsed.clothes = (await safeRun(() => Clothes.find({ status: { $ne: "donated" }, wearCount: { $gt: 0 } }).sort({ wearCount: -1 }).limit(5), "mostUsedClothes")) || [];
-    result.mostUsed.accessories = (await safeRun(() => Accessories.find({ status: { $ne: "donated" }, wearCount: { $gt: 0 } }).sort({ wearCount: -1 }).limit(5), "mostUsedAccessories")) || [];
+    result.mostUsed.clothes = (await safeRun(() => Clothes.find({ status: { $ne: "donated" }, wearCount: { $gte: 7 } }).sort({ wearCount: -1 }).limit(5), "mostUsedClothes")) || [];
+    result.mostUsed.accessories = (await safeRun(() => Accessories.find({ status: { $ne: "donated" }, wearCount: { $gte: 7 } }).sort({ wearCount: -1 }).limit(5), "mostUsedAccessories")) || [];
 
     // DONATION SUGGESTIONS
     console.log("Fetching donation suggestions...");
-    result.donationSuggestions.clothes = (await safeRun(() => Clothes.find({ status: "active", wearCount: 0 }).limit(10), "donationClothes")) || [];
-    result.donationSuggestions.accessories = (await safeRun(() => Accessories.find({ status: "active", wearCount: 0 }).limit(10), "donationAccessories")) || [];
+    result.donationSuggestions.clothes = (await safeRun(() => Clothes.find({ 
+      status: "active", 
+      $or: [
+        { wearCount: { $lte: 2 } },
+        { lastWorn: { $lte: oneYearAgo } }
+      ]
+    }), "donationClothes")) || [];
+    result.donationSuggestions.accessories = (await safeRun(() => Accessories.find({ 
+      status: "active", 
+      $or: [
+        { wearCount: { $lte: 2 } },
+        { lastWorn: { $lte: oneYearAgo } }
+      ]
+    }), "donationAccessories")) || [];
 
     // BREAKDOWN BY CATEGORY
     console.log("Running aggregation breakdowns...");
